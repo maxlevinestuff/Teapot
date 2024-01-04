@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<title>Rotating Square</title>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 vPosition, vNormal;
+
+//must be uniform to use getUniformLocation in js 
+uniform mat4 projection;
+uniform mat4 modelView;
+
+varying vec3 N, L, E;
+
+uniform vec4 lightPos;
+
+// varying type variable to share with fragment shader, as the color
+// will be sent to the fragment shader
+//varying is for sending between vertext and fragment
+varying vec4 fColor;
+
+void main() {
+
+	vec3 pos = (modelView * vPosition).xyz;
+	vec3 light = lightPos.xyz;
+	L = normalize(light - pos);
+
+	E = normalize(-pos);
+	//vec3 H = normalize(L + E);
+	N = normalize((modelView * vNormal).xyz);
+
+	gl_Position = projection * modelView * vPosition;
+
+	//fColor = vec4(1,1,1,1);
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+// vertex color coming from vertex shader
+varying vec4 fColor;
+
+uniform vec4 ambientProduct, diffuseProduct, specularProduct, lightPos;
+uniform float shininess;
+varying vec3 N, L, E;
+
+void main() {
+	vec4 fColor;
+	vec3 H = normalize(L + E);
+	vec4 ambient = ambientProduct;
+	float Kd = max(dot(L, N), 0.0);
+	vec4 diffuse = Kd * diffuseProduct;
+	float Ks = pow(max(dot(N, H), 0.0), shininess);
+	vec4 specular = Ks * specularProduct;
+
+	if (dot(L, N) < 0.0) {
+		specular = vec4(0.0, 0.0, 0.0, 1.0);
+	}
+	fColor = ambient + diffuse + specular;
+	fColor.a = 1.0;
+    gl_FragColor = fColor;
+}
+
+</script>
+<script type="text/javascript" src="./teapot.js"></script>
+<script type="text/javascript" src="./common/utils.js"></script>
+<script type="text/javascript" src="./common/initShaders.js"></script>
+<script type="text/javascript" src="./common/xform.js"></script>
+<script type="text/javascript" src="./common/mat_vec.js"></script>
+
+<script type="text/javascript" src="./common/MV.js"></script>
+<script type="text/javascript" src="./common/createTeapotData.js"></script>
+<script type="text/javascript" src="./common/patches.js"></script>
+<script type="text/javascript" src="./common/vertices.js"></script>
+</head>   
+
+<body>
+
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+<h4>Light Source Position</h4>
+X (-116.0 - 116.0): <input type="range" min="-116" max="116" value="0" step=".01" class="slider" style="width: 512px" id="light-x"><br>
+Y (-120.0 - 120.0): <input type="range" min="-120" max="120" value="0" step=".01" class="slider" style="width: 512px" id="light-y"><br>
+Z (-50.0 - 210.0): <input type="range" min="-50" max="210" value="100" step=".01" class="slider" style="width: 512px" id="light-z"><br>
+
+<h4>Light Intensity (Diffuse)</h4>
+(-4.0 - 6.0): <input type="range" min="-4" max="6" value=".7" step=".01" class="slider" style="width: 512px" id="diffuse-intensity"><br>
+
+<h4>Light Intensity (Specular)</h4>
+(-4.0 - 6.0): <input type="range" min="-4" max="6" value="1" step=".01" class="slider" style="width: 512px" id="specular-intensity"><br>
+
+<h4>Diffuse Reflectivity Constants</h4>
+Red: <input type="range" min="0" max="5" value=".25" step=".01" class="slider" style="width: 170px" id="diffuse-red"> Green: <input type="range" min="0" max="5" value=".36" step=".01" class="slider" style="width: 170px" id="diffuse-green"> Blue: <input type="range" min="0" max="5" value=".2" step=".01" class="slider" style="width: 170px" id="diffuse-blue">
+
+<h4>Specular Reflectivity Constants</h4>
+Red (0.0 - 5.0): <input type="range" min="0" max="5" value=".8" step=".01" class="slider" style="width: 170px" id="specular-red"> Green (0.0 - 5.0): <input type="range" min="0" max="5" value=".77" step=".01" class="slider" style="width: 170px" id="specular-green"> Blue (0.0 - 5.0): <input type="range" min="0" max="5" value=".77" step=".01" class="slider" style="width: 170px" id="specular-blue">
+
+<h4>Shininess</h4>
+(0.0 - 12.0): <input type="range" min="0" max="12" value="4" step=".01" class="slider" style="width: 512px" id="shininess"><br>
+
+</body>
+</html>
